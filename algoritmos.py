@@ -43,17 +43,14 @@ def aging(referencia_de_paginas, num_molduras, bits=8):
 
 def ler_referencias(nome_arquivo):
     with open(nome_arquivo, 'r') as arquivo:
-        conteudo = arquivo.read()
-    referencias = [int(x.strip()) for x in conteudo.split(',')]
+        print("lendo...")
+        referencias = [int(linha.strip()) for linha in arquivo.readlines()]
     return referencias
 
 def main():
-    lista_num_molduras = list(range(1, 21))
+    lista_num_molduras = list(range(1, 36))
 
     print(lista_num_molduras)
-
-    num_paginas = 200
-    tamanho_sequencia = 1000
 
     referencia_de_paginas = ler_referencias('referencias_paginas.txt')
 
@@ -73,22 +70,39 @@ def main():
         print(f"molduras: {resultado['molduras']}, Falta de páginas FIFO: {resultado['falta_de_paginas_fifo']}, Falta de páginas AGING: {resultado['falta_de_paginas_aging']}")
 
     molduras = [resultado['molduras'] for resultado in resultados]
+
+    diff_fifo_aging = [resultado['falta_de_paginas_fifo'] - resultado['falta_de_paginas_aging'] for resultado in resultados]
+    print(f"Diferença: {diff_fifo_aging}")
+
+    plt.figure(figsize=(12, 6))
+
+    plt.plot(molduras, diff_fifo_aging, marker='o', label='FIFO - AGING', color='b')
+
+    plt.xlabel('Número de Molduras')
+    plt.ylabel('Diferença no Número de Faltas de Página')
+    plt.title('Diferença de Faltas de Página entre FIFO e AGING')
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig('diferenca_algoritmos.png')
+    plt.show()
+    
     faltas_fifo = [resultado['falta_de_paginas_fifo'] for resultado in resultados]
     faltas_aging = [resultado['falta_de_paginas_aging'] for resultado in resultados]
 
     plt.figure(figsize=(12, 6))
-    
+
     plt.plot(molduras, faltas_fifo, marker='o', label='FIFO', color='b')
     plt.plot(molduras, faltas_aging, marker='x', label='AGING', color='r')
-    
+
     plt.xlabel('Número de Molduras')
     plt.ylabel('Número de Faltas de Página')
     plt.title('Comparação de Faltas de Página entre FIFO e AGING')
     plt.legend()
     plt.grid(True)
-    
+
     plt.savefig('comparacao_algoritmos.png')
     plt.show()
-    
+
 if __name__ == "__main__":
     main()
