@@ -1,7 +1,8 @@
 import random
+def gerar_referencias_de_pagina(num_paginas, tamanho_sequencia):
+    return [random.randint(0, num_paginas - 1) for _ in range(tamanho_sequencia)]
 
 def fifo(referencia_de_paginas, num_molduras):
-    print("-----------FIFO----------")
     molduras = []
     faltas_de_pagina = 0
 
@@ -16,42 +17,56 @@ def fifo(referencia_de_paginas, num_molduras):
     
     return faltas_de_pagina
 
-def lru(referencia_de_paginas, num_molduras):
-    print("-----------LRU----------")
-    molduras = []
+def aging(referencia_de_paginas, num_molduras, bits=8):
     faltas_de_pagina = 0
+    molduras = []
+    contador = {}
+    
     for pagina in referencia_de_paginas:
-        if pagina not in molduras:
+
+        if pagina in molduras:
+            contador[pagina] = contador[pagina] | (1 << (bits - 1)) 
+        else:
             faltas_de_pagina += 1
             if len(molduras) < num_molduras:
                 molduras.append(pagina)
             else:
-                molduras.pop(0)
+                oldest_pagina = min(molduras, key=lambda p: contador[p])
+                molduras.remove(oldest_pagina)
+                del contador[oldest_pagina]
                 molduras.append(pagina)
-        else:
-            molduras.remove(pagina)
-            molduras.append(pagina)
-    return faltas_de_pagina
+            contador[pagina] = 1 << (bits - 1) 
 
+        for p in molduras:
+            contador[p] = contador[p] >> 1  
+    
+    return faltas_de_pagina
 def main():
-    lista_num_molduras = list(range(1,5))
+    lista_num_molduras = list(range(1, 21))
+
     print(lista_num_molduras)
 
-    referencia_de_paginas = [8,1,1,4,5,7,9,6,5,3]
+    num_paginas = 200
+    tamanho_sequencia = 1000
+    referencia_de_paginas = gerar_referencias_de_pagina(num_paginas, tamanho_sequencia)
+
+    with open("referencias_paginas.txt", "w") as f:
+        f.write('|'.join(map(str, referencia_de_paginas)))
+
     resultados = []
 
     for num_molduras in lista_num_molduras:
         falta_de_paginas_fifo = fifo(referencia_de_paginas, num_molduras)
-        falta_de_paginas_lru = lru(referencia_de_paginas, num_molduras)
+        falta_de_paginas_aging = aging(referencia_de_paginas, num_molduras)
 
         resultados.append({
             'molduras': num_molduras,
             'falta_de_paginas_fifo': falta_de_paginas_fifo,
-            'falta_de_paginas_lru': falta_de_paginas_lru
+            'falta_de_paginas_aging': falta_de_paginas_aging
         })
 
     for resultado in resultados:
-        print(f"molduras: {resultado['molduras']}, Falta de páginas FIFO: {resultado['falta_de_paginas_fifo']}, Falta de páginas LRU: {resultado['falta_de_paginas_lru']}")
+        print(f"molduras: {resultado['molduras']}, Falta de páginas FIFO: {resultado['falta_de_paginas_fifo']}, Falta de páginas AGING: {resultado['falta_de_paginas_aging']}")
 
 if __name__ == "__main__":
     main()
